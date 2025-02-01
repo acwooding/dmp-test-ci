@@ -57,7 +57,7 @@ test.describe('Cord19 Canvas Tests', () => {
     await canvas.hover();
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.mouse.move(startX + 300, startY, { steps: 10 }); // Added steps for smoother movement
+    await page.mouse.move(startX + 300, startY, { steps: 5 }); // Reduce steps to speed up test
     await page.mouse.up();
 
     await page.waitForLoadState('networkidle');
