@@ -66,7 +66,7 @@ stages:
         #   condition: eq(variables['Agent.OS'], 'Windows_NT')
 
         - powershell: |
-            $serverJob = Start-Process python -ArgumentList "-m", "http.server", "8000", "-d", "$env:BUILD_SOURCESDIRECTORY\datamapplot\tests\html" -PassThru -NoNewWindow
+            $serverJob = Start-Process python -ArgumentList "-m", "http.server", "8000", -PassThru -NoNewWindow
             Start-Sleep -Seconds 5
             $retry = 0
             do {
@@ -85,6 +85,7 @@ stages:
                 Write-Error "Server failed to start after multiple attempts"
                 exit 1
             }
+          workingDirectory: '$(Build.SourcesDirectory)/datamapplot/tests/html'
           displayName: 'Start HTTP server (Windows)'
           condition: eq(variables['Agent.OS'], 'Windows_NT')
 
@@ -115,7 +116,7 @@ stages:
             targetPath: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             artifact: 'updated-screenshots'
           displayName: 'Publish updated screenshots'
-          condition: succeededOrFailed()
+          condition: always()
 
         - task: PublishTestResults@2
           displayName: 'Publish frontest test results'
