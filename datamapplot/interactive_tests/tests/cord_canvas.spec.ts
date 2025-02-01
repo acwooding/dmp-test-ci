@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Cord19 Canvas Tests', () => {
   test.beforeEach(async ({ page }, testInfo) => {
-    // Extend timeout for all tests running this hook by 2 minutes.
-    testInfo.setTimeout(testInfo.timeout + 120_000);
+    // Extend timeout for all tests running this hook by 3 minutes.
+    testInfo.setTimeout(testInfo.timeout + 180_000);
     // Set consistent viewport size
     await page.setViewportSize({ width: 1280, height: 720 });
 

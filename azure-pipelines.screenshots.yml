@@ -58,10 +58,33 @@ stages:
           displayName: 'Start HTTP server (Unix)'
           condition: ne(variables['Agent.OS'], 'Windows_NT')
 
-        - script: |
-            start /b cmd /c "python -m http.server 8000 -d %BUILD_SOURCESDIRECTORY%\datamapplot\tests\html"
-            timeout /t 2
-            curl -I http://localhost:8000
+        # - script: |
+        #     start /b cmd /c "python -m http.server 8000 -d %BUILD_SOURCESDIRECTORY%\datamapplot\tests\html"
+        #     timeout /t 2
+        #     curl -I http://localhost:8000
+        #   displayName: 'Start HTTP server (Windows)'
+        #   condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+        - powershell: |
+            $serverJob = Start-Process python -ArgumentList "-m", "http.server", "8000", "-d", "$env:BUILD_SOURCESDIRECTORY\datamapplot\tests\html" -PassThru -NoNewWindow
+            Start-Sleep -Seconds 5
+            $retry = 0
+            do {
+                try {
+                    $response = Invoke-WebRequest -Uri "http://localhost:8000" -Method Head
+                    Write-Host "Server started successfully"
+                    break
+                } catch {
+                    Write-Host "Waiting for server to start... Attempt $retry"
+                    Start-Sleep -Seconds 2
+                    $retry++
+                }
+            } while ($retry -lt 5)
+
+            if ($retry -eq 5) {
+                Write-Error "Server failed to start after multiple attempts"
+                exit 1
+            }
           displayName: 'Start HTTP server (Windows)'
           condition: eq(variables['Agent.OS'], 'Windows_NT')
 
