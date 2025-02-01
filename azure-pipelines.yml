@@ -82,7 +82,15 @@ stages:
 
         - script: |
             python -m http.server 8000 -d $(Build.SourcesDirectory)/datamapplot/tests/html &
-          displayName: 'Start HTTP server'
+          displayName: 'Start HTTP server (Unix)'
+          condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+        - script: |
+            start /b cmd /c "python -m http.server 8000 -d %BUILD_SOURCESDIRECTORY%\datamapplot\tests\html"
+            timeout /t 2
+            curl -I http://localhost:8000
+          displayName: 'Start HTTP server (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
 
         - task: NodeTool@0
           inputs:
