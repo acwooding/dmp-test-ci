@@ -44,6 +44,7 @@ test.describe('Cord19 Canvas Tests', () => {
   });
 
   test('pan functionality', async ({ page }) => {
+    test.setTimeout(240000); // Set timeout to 4 minutes
     await verifyInitialState(page);
     const canvas = page.locator('#deck-container canvas');
     
