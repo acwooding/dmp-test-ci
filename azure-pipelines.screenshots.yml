@@ -110,32 +110,11 @@ stages:
           env:
             CI: 'true'
 
-        - script: |
-            npx playwright test --update-snapshots
-            git config --global user.email "azure-pipelines@example.com"
-            git config --global user.name "Azure Pipelines"
-            git checkout -b update-screenshots-$(Build.BuildId)
-            git add -A
-            git commit -m "Update screenshot references"
-            git push origin update-screenshots-$(Build.BuildId)
-          displayName: 'Generate and commit screenshots'
-          env:
-            GIT_TOKEN: $(System.AccessToken)
-
-        - task: CreatePullRequest@1
+        - task: PublishPipelineArtifact@1
           inputs:
-            githubConnection: 'github'
-            repoOwner: '$(Build.Repository.Name)'
-            title: 'Update Platform Screenshots'
-            body: |
-              Generated new screenshot references from CI environment.
-
-              Platform: $(Agent.OS)
-              Playwright version: $(npx playwright --version)
-            sourceBranch: 'update-screenshots-$(Build.BuildId)'
-            targetBranch: '$(Build.SourceBranch)'
-            title: 'Update Platform Screenshots for $(Build.BuildId)'
-          displayName: 'Create Pull Request'
+            targetPath: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
+            artifact: 'updated-screenshots'
+          displayName: 'Publish updated screenshots'
 
         - task: PublishTestResults@2
           displayName: 'Publish frontest test results'
