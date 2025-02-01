@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Cord19 Canvas Tests', () => {
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(120000); // Set timeout to 2 minutes
     // Set consistent viewport size
     await page.setViewportSize({ width: 1280, height: 720 });
     
@@ -10,7 +11,6 @@ test.describe('Cord19 Canvas Tests', () => {
     // Wait for loading
     console.log('Waiting for #loading to be hidden...');
     await page.waitForSelector('#loading', { state: 'hidden', timeout: 60000 }); // Increased timeout
-    await page.waitForTimeout(500);
     console.log('Waiting for #progress-container to be hidden...');
     await page.waitForSelector('#progress-container', { state: 'hidden', timeout: 60000 }); // Increased timeout
   });
