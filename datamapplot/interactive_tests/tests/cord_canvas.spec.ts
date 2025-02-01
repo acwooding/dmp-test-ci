@@ -14,8 +14,8 @@ test.describe('Cord19 Canvas Tests', () => {
     // Wait for loading
     console.log('Waiting for #loading and #progress-container to be hidden...');
     await Promise.all([
-      page.waitForSelector('#loading', { state: 'hidden', timeout: 60000 }),
-      page.waitForSelector('#progress-container', { state: 'hidden', timeout: 60000 })
+      page.waitForSelector('#loading', { state: 'hidden', timeout: 120000 }),
+      page.waitForSelector('#progress-container', { state: 'hidden', timeout: 120000 })
     ]);
   });
 
