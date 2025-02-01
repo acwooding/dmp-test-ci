@@ -114,7 +114,7 @@ stages:
         - task: PublishPipelineArtifact@1
           inputs:
             targetPath: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
-            artifact: 'updated-screenshots'
+            artifact: 'updated-screenshots-$(Agent.OS)'
           displayName: 'Publish updated screenshots'
           condition: always()
 
