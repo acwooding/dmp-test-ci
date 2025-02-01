@@ -1,0 +1,178 @@
+# Trigger a build when there is a push to the main branch or a tag starts with release-
+trigger:
+  branches:
+    include:
+    - main
+  tags:
+    include:
+    - release-*
+
+# Trigger a build when there is a pull request to the main branch
+# Ignore PRs that are just updating the docs
+pr:
+  branches:
+    include:
+    - main
+    exclude:
+    - doc/*
+    - README.rst
+
+# Trigger a run on main at 00:00 (midnight) UTC on Sundays
+# Run even if there are no code changes
+schedules:
+  - cron: "0 0 * * 0"
+    displayName: "Sunday Test Runs"
+    always: true
+    branches:
+      include:
+        - main
+
+parameters:
+- name: matrix
+  displayName: Pool Image and Python Version Matrix
+  type: object
+  default:
+    mac_py310:
+      imageName: 'macOS-latest'
+      python.version: '3.10'
+    # linux_py310:
+    #   imageName: 'ubuntu-latest'
+    #   python.version: '3.10'
+    # windows_py310:
+    #   imageName: 'windows-latest'
+    #   python.version: '3.10'
+    # mac_py311:
+    #   imageName: 'macOS-latest'
+    #   python.version: '3.11'
+    # linux_py311:
+    #   imageName: 'ubuntu-latest'
+    #   python.version: '3.11'
+    # windows_py311:
+    #   imageName: 'windows-latest'
+    #   python.version: '3.11'
+    # mac_py312:
+    #   imageName: 'macOS-latest'
+    #   python.version: '3.12'
+    # linux_py312:
+    #   imageName: 'ubuntu-latest'
+    #   python.version: '3.12'
+    # windows_py312:
+    #   imageName: 'windows-latest'
+    #   python.version: '3.12'
+
+variables:
+  triggeredByPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+
+stages:
+  - stage: RunAllTests
+    displayName: Run python test suite
+    jobs:
+      - job: run_tests
+        strategy:
+          matrix: ${{ parameters.matrix }}
+
+        pool:
+          vmImage: $(imageName)
+
+        steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '$(python.version)'
+          displayName: 'Use Python $(python.version)'
+
+        - script: |
+            python -m http.server 8000 -d $(Build.SourcesDirectory)/datamapplot/tests/html &
+          displayName: 'Start HTTP server'
+
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '22'
+          displayName: 'Use Node.js for frontend tests'
+
+        - script: |
+            npm ci
+          displayName: 'Install npm dependencies'
+          workingDirectory: '$(Build.SourcesDirectory)/datamapplot/interactive_tests'
+
+        - script: |
+            npx playwright install --with-deps
+          displayName: 'Install Playwright browsers'
+          workingDirectory: '$(Build.SourcesDirectory)/datamapplot/interactive_tests'
+
+        - script: |
+            npx playwright test
+          displayName: 'Run Playwright tests'
+          workingDirectory: '$(Build.SourcesDirectory)/datamapplot/interactive_tests'
+          env:
+            CI: 'true'
+
+        - task: PublishTestResults@2
+          displayName: 'Publish frontest test results'
+          inputs:
+            searchFolder: 'test-results'
+            testResultsFormat: 'JUnit'
+            testResultsFiles: 'e2e-junit-results.xml'
+            mergeTestResults: true
+            failTaskOnFailedTests: true
+            testRunTitle: 'Playwright Test Results'
+          condition: succeededOrFailed()
+
+        - task: PublishBuildArtifacts@1
+          inputs:
+            pathToPublish: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/playwright-report'
+            artifactName: 'playwright-report'
+          displayName: 'Publish Playwright Test Report'
+          condition: succeededOrFailed()
+
+  - stage: BuildPublishArtifact
+    dependsOn:
+      - RunAllTests
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/release-'), eq(variables.triggeredByPullRequest, false))
+    jobs:
+      - job: BuildArtifacts
+        displayName: Build source dists and wheels
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.10'
+          displayName: 'Use Python 3.10'
+
+        - script: |
+            python -m pip install --upgrade pip
+            pip install wheel
+          displayName: 'Install dependencies'
+
+        - script: |
+            pip install -e .
+          displayName: 'Install package locally'
+
+        - script: |
+            python setup.py sdist bdist_wheel
+          displayName: 'Build package'
+
+        - bash: |
+            export PACKAGE_VERSION="$(python setup.py --version)"
+            echo "Package Version: ${PACKAGE_VERSION}"
+            echo "##vso[task.setvariable variable=packageVersionFormatted;]release-${PACKAGE_VERSION}"
+          displayName: 'Get package version'
+
+        - script: |
+            echo "Version in git tag $(Build.SourceBranchName) does not match version derived from setup.py $(packageVersionFormatted)"
+            exit 1
+          displayName: Raise error if version doesnt match tag
+          condition: and(succeeded(), ne(variables['Build.SourceBranchName'], variables['packageVersionFormatted']))
+
+        - task: DownloadSecureFile@1
+          name: PYPIRC_CONFIG
+          displayName: 'Download pypirc'
+          inputs:
+            secureFile: 'pypirc'
+
+        - script: |
+            pip install twine
+            twine upload --repository pypi --config-file $(PYPIRC_CONFIG.secureFilePath) dist/*
+          displayName: 'Upload to PyPI'
+          condition: and(succeeded(), eq(variables['Build.SourceBranchName'], variables['packageVersionFormatted']))
+
