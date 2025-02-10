@@ -14,9 +14,9 @@ parameters:
     # windows_py310:
     #   imageName: 'windows-latest'
     #   python.version: '3.10'
-    # mac_py311:
-    #   imageName: 'macOS-latest'
-    #   python.version: '3.11'
+    mac_py311:
+      imageName: 'macOS-latest'
+      python.version: '3.11'
     linux_py311:
       imageName: 'ubuntu-latest'
       python.version: '3.11'
@@ -103,12 +103,26 @@ stages:
           env:
             CI: 'true'
 
+        - powershell: |
+            $targetFolder = '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
+            if (-Not (Test-Path -Path $targetFolder)) {
+                New-Item -ItemType Directory -Path $targetFolder
+            }
+          displayName: 'Ensure filtered-screenshots directory exists (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+        - script: |
+            targetFolder='$(Build.ArtifactStagingDirectory)/filtered-screenshots'
+            mkdir -p $targetFolder
+          displayName: 'Ensure filtered-screenshots directory exists (Darwin/Linux)'
+          condition: neq(variables['Agent.OS'], 'Windows_NT')
+
         - task: CopyFiles@2
           condition: eq(variables['Agent.OS'], 'Windows_NT')
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             Contents: '*-win32.png'
-            TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots-windows'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Windows)'
 
         - task: CopyFiles@2
@@ -116,7 +130,7 @@ stages:
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             Contents: '*-darwin.png'
-            TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots-darwin'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Darwin)'
 
         - task: CopyFiles@2
@@ -124,7 +138,7 @@ stages:
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             Contents: '*-linux.png'
-            TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots-linux'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Linux)'
 
         - task: PublishPipelineArtifact@1
