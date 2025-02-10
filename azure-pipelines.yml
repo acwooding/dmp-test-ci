@@ -151,7 +151,7 @@ stages:
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/playwright-report'
-            artifactName: 'playwright-report'
+            artifactName: 'playwright-report-$(Build.BuildId)-$(Agent.OS)-py$(python.version)'
           displayName: 'Publish Playwright Test Report'
           condition: succeededOrFailed()
 
