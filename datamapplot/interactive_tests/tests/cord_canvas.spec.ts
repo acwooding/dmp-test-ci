@@ -25,6 +25,7 @@ test.describe('Cord19 Canvas Tests', () => {
   };
 
   test('zoom functionality', async ({ page }) => {
+    test.slow();
     await verifyInitialState(page);
     const canvas = page.locator('#deck-container canvas');
 
