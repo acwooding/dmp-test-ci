@@ -115,31 +115,31 @@ stages:
             targetFolder='$(Build.ArtifactStagingDirectory)/filtered-screenshots'
             mkdir -p $targetFolder
           displayName: 'Ensure filtered-screenshots directory exists (Darwin/Linux)'
-          condition: neq(variables['Agent.OS'], 'Windows_NT')
+          condition: ne(variables['Agent.OS'], 'Windows_NT')
 
         - task: CopyFiles@2
-          condition: eq(variables['Agent.OS'], 'Windows_NT')
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             Contents: '*-win32.png'
             TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
 
         - task: CopyFiles@2
-          condition: eq(variables['Agent.OS'], 'Darwin')
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             Contents: '*-darwin.png'
             TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Darwin)'
+          condition: eq(variables['Agent.OS'], 'Darwin')
 
         - task: CopyFiles@2
-          condition: eq(variables['Agent.OS'], 'Linux')
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
             Contents: '*-linux.png'
             TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Linux)'
+          condition: eq(variables['Agent.OS'], 'Linux')
 
         - task: PublishPipelineArtifact@1
           inputs:
