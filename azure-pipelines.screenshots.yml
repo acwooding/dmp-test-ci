@@ -120,7 +120,7 @@ stages:
         - task: CopyFiles@2
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
-            Contents: '*-win32.png'
+            Contents: '**/*-win32.png'
             TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Windows)'
           condition: eq(variables['Agent.OS'], 'Windows_NT')
@@ -128,7 +128,7 @@ stages:
         - task: CopyFiles@2
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
-            Contents: '*-darwin.png'
+            Contents: '**/*-darwin.png'
             TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Darwin)'
           condition: eq(variables['Agent.OS'], 'Darwin')
@@ -136,7 +136,7 @@ stages:
         - task: CopyFiles@2
           inputs:
             SourceFolder: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests'
-            Contents: '*-linux.png'
+            Contents: '**/*-linux.png'
             TargetFolder: '$(Build.ArtifactStagingDirectory)/filtered-screenshots'
           displayName: 'Copy filtered screenshots (Linux)'
           condition: eq(variables['Agent.OS'], 'Linux')
