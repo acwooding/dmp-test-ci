@@ -41,24 +41,24 @@ parameters:
     # windows_py310:
     #   imageName: 'windows-latest'
     #   python.version: '3.10'
-    # mac_py311:
-    #   imageName: 'macOS-latest'
-    #   python.version: '3.11'
+    mac_py311:
+      imageName: 'macOS-latest'
+      python.version: '3.11'
     # linux_py311:
     #   imageName: 'ubuntu-latest'
     #   python.version: '3.11'
     # windows_py311:
     #   imageName: 'windows-latest'
     #   python.version: '3.11'
-    # mac_py312:
-    #   imageName: 'macOS-latest'
-    #   python.version: '3.12'
-    # linux_py312:
-    #   imageName: 'ubuntu-latest'
-    #   python.version: '3.12'
-    # windows_py312:
-    #   imageName: 'windows-latest'
-    #   python.version: '3.12'
+    mac_py312:
+      imageName: 'macOS-latest'
+      python.version: '3.12'
+    linux_py312:
+      imageName: 'ubuntu-latest'
+      python.version: '3.12'
+    windows_py312:
+      imageName: 'windows-latest'
+      python.version: '3.12'
 
 variables:
   triggeredByPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -82,7 +82,38 @@ stages:
 
         - script: |
             python -m http.server 8000 -d $(Build.SourcesDirectory)/datamapplot/tests/html &
-          displayName: 'Start HTTP server'
+          displayName: 'Start HTTP server (Unix)'
+          condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+        # - script: |
+        #     start /b cmd /c "python -m http.server 8000 -d %BUILD_SOURCESDIRECTORY%\datamapplot\tests\html"
+        #     timeout /t 2
+        #     curl -I http://localhost:8000
+        #   displayName: 'Start HTTP server (Windows)'
+        #   condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+        - powershell: |
+            $serverJob = Start-Process python -ArgumentList "-m", "http.server", "8000", "-d", "$env:BUILD_SOURCESDIRECTORY\datamapplot\tests\html" -PassThru -NoNewWindow
+            Start-Sleep -Seconds 5
+            $retry = 0
+            do {
+                try {
+                    $response = Invoke-WebRequest -Uri "http://localhost:8000" -Method Head
+                    Write-Host "Server started successfully"
+                    break
+                } catch {
+                    Write-Host "Waiting for server to start... Attempt $retry"
+                    Start-Sleep -Seconds 2
+                    $retry++
+                }
+            } while ($retry -lt 5)
+
+            if ($retry -eq 5) {
+                Write-Error "Server failed to start after multiple attempts"
+                exit 1
+            }
+          displayName: 'Start HTTP server (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
 
         - task: NodeTool@0
           inputs:
@@ -120,7 +151,7 @@ stages:
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: '$(Build.SourcesDirectory)/datamapplot/interactive_tests/playwright-report'
-            artifactName: 'playwright-report'
+            artifactName: 'playwright-report-$(Build.BuildId)-$(Agent.OS)-py$(python.version)'
           displayName: 'Publish Playwright Test Report'
           condition: succeededOrFailed()
 
