@@ -81,6 +81,45 @@ stages:
           displayName: 'Start HTTP server (Windows)'
           condition: eq(variables['Agent.OS'], 'Windows_NT')
 
+        - powershell: |
+            Get-ChildItem -Path "$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests" -Recurse | ForEach-Object {
+              $indent = "  " * ($_.FullName.Split([IO.Path]::DirectorySeparatorChar).Count - 1)
+              Write-Host "$indent$($_.Name)"
+            }
+          displayName: 'List starting test directory contents (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+        - script: |
+            find "$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests" -type f -o -type d | sed 's/[^/]*\//  /g'
+          displayName: 'List starting test directory contents (Darwin/Linux)'
+          condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+        - powershell: |
+            Get-ChildItem -Path "$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests" -Directory |
+            ForEach-Object {
+                Get-ChildItem -Path $_.FullName -Recurse -File | Remove-Item -Force
+            }
+          displayName: 'Clean subdirectory files (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+        - script: |
+            find "$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests" -mindepth 2 -type f -delete
+          displayName: 'Clean subdirectory files (Darwin/Linux)'
+          condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+        - powershell: |
+            Get-ChildItem -Path "$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests" -Recurse | ForEach-Object {
+              $indent = "  " * ($_.FullName.Split([IO.Path]::DirectorySeparatorChar).Count - 1)
+              Write-Host "$indent$($_.Name)"
+            }
+          displayName: 'List starting test directory contents (Windows)'
+          condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+        - script: |
+            find "$(Build.SourcesDirectory)/datamapplot/interactive_tests/tests" -type f -o -type d | sed 's/[^/]*\//  /g'
+          displayName: 'List starting test directory contents (Darwin/Linux)'
+          condition: ne(variables['Agent.OS'], 'Windows_NT')
+
         - task: NodeTool@0
           inputs:
             versionSpec: '22'
